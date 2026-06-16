@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,11 +15,23 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool bloqueado = false;
   String mensajeBloqueo = "";
+  Timer? securityTimer;
 
   @override
   void initState() {
     super.initState();
     iniciarSeguridad();
+
+    securityTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => verificarUsbDebuggingTiempoReal(),
+    );
+  }
+
+  @override
+  void dispose() {
+    securityTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> iniciarSeguridad() async {
@@ -34,26 +47,41 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> verificarUsbDebugging() async {
-    print("kDebugMode = $kDebugMode");
-
     bool adbEnabled = await SecurityService.isUsbDebuggingEnabled();
 
-    print("ADB ACTIVO = $adbEnabled");
-
     if (adbEnabled) {
-      print("SE DETECTÓ ADB");
-      
-      // Se comenta la restricción de kDebugMode para poder probar el bloqueo en desarrollo
-      // if (!kDebugMode) {
-        setState(() {
-          bloqueado = true;
-          mensajeBloqueo = "Depuración USB Detectada";
-        });
-        _mostrarAlertaBloqueo(
-          "Depuración USB Activa",
-          "La aplicación no puede ejecutarse porque la Depuración USB está activa. Por favor, desactívela en las Opciones de Desarrollador.",
-        );
-      // }
+      setState(() {
+        bloqueado = true;
+        mensajeBloqueo = "Depuración USB Detectada";
+      });
+      _mostrarAlertaBloqueo(
+        "Depuración USB Activa",
+        "La aplicación no puede ejecutarse porque la Depuración USB está activa. Por favor, desactívela en las Opciones de Desarrollador.",
+      );
+    }
+  }
+
+  Future<void> verificarUsbDebuggingTiempoReal() async {
+    bool adbEnabled = await SecurityService.isUsbDebuggingEnabled();
+
+    if (adbEnabled && !bloqueado) {
+      setState(() {
+        bloqueado = true;
+        mensajeBloqueo = "Depuración USB Detectada";
+      });
+
+      _mostrarAlertaBloqueo(
+        "Depuración USB Activa",
+        "La aplicación ha detectado que la Depuración USB fue activada. Por motivos de seguridad la aplicación será bloqueada hasta que se desactive.",
+      );
+    } else if (!adbEnabled && bloqueado && mensajeBloqueo == "Depuración USB Detectada") {
+      setState(() {
+        bloqueado = false;
+        mensajeBloqueo = "";
+      });
+
+      // Cerramos el diálogo de alerta si está presente
+      Navigator.of(context, rootNavigator: true).pop();
     }
   }
 
