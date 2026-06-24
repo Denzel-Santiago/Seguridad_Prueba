@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "634883294921",
+    "project_id": "seguridad-prueba-80d54",
+    "storage_bucket": "seguridad-prueba-80d54.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:634883294921:android:77bc6a89a28ea0685def18",
+        "android_client_info": {
+          "package_name": "com.denzel.seguridad_prueba"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAoUKc-yRxZ7xYxSeFekkTgW8yTFLCXSGI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

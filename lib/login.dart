@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'services/security_service.dart';
+import 'services/session_timeout_manager.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,10 +24,13 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     iniciarSeguridad();
 
+    // SEGURIDAD POR ADB DESACTIVADA TEMPORALMENTE PARA LA PRÁCTICA
+    /*
     securityTimer = Timer.periodic(
       const Duration(seconds: 2),
       (_) => verificarUsbDebuggingTiempoReal(),
     );
+    */
   }
 
   @override
@@ -35,10 +40,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> iniciarSeguridad() async {
-    // 1. Protección de capturas (Ahora se maneja nativamente en MainActivity.kt)
+    // 1. Protección de capturas (Nativo en MainActivity.kt)
 
-    // 2. Verificar USB Debugging (RASP)
-    await verificarUsbDebugging();
+    // 2. Verificar USB Debugging (DESACTIVADO TEMPORALMENTE)
+    // await verificarUsbDebugging();
 
     // 3. Verificar Fake GPS
     if (!bloqueado) {
@@ -80,7 +85,6 @@ class _LoginScreenState extends State<LoginScreen> {
         mensajeBloqueo = "";
       });
 
-      // Cerramos el diálogo de alerta si está presente
       Navigator.of(context, rootNavigator: true).pop();
     }
   }
@@ -132,6 +136,48 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  void _ingresar() {
+    // Iniciar la sesión con el límite de 15 segundos
+    SessionTimeoutManager().startSession();
+    
+    // Configurar qué sucede cuando el tiempo expira
+    SessionTimeoutManager().setOnTimeoutListener(() {
+      if (mounted) {
+        // Regresar al login y limpiar navegación para evitar volver atrás
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+        
+        // Notificar al usuario que la sesión expiró
+        _mostrarSesionExpirada();
+      }
+    });
+
+    // Navegación a la pantalla de datos sensibles
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+    );
+  }
+
+  void _mostrarSesionExpirada() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text("Sesión Expirada"),
+        content: const Text("Tu sesión ha sido cerrada automáticamente por inactividad."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Aceptar"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -140,66 +186,64 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       body: bloqueado
           ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.security_update_warning, size: 80, color: Colors.red),
-            const SizedBox(height: 20),
-            Text(
-              mensajeBloqueo,
-              style: const TextStyle(
-                fontSize: 24,
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.security_update_warning, size: 80, color: Colors.red),
+                  const SizedBox(height: 20),
+                  Text(
+                    mensajeBloqueo,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 40),
+                    child: Text(
+                      "Por seguridad, la aplicación ha sido deshabilitada en este dispositivo.",
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 10),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 40),
-              child: Text(
-                "Por seguridad, la aplicación ha sido deshabilitada en este dispositivo.",
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-      )
+            )
           : Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              decoration: InputDecoration(
-                labelText: "Usuario",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextField(
+                    decoration: InputDecoration(
+                      labelText: "Usuario",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: "Contraseña",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _ingresar,
+                      child: const Text("Ingresar"),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
-            TextField(
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: "Contraseña",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-            const SizedBox(height: 30),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Lógica de ingreso
-                },
-                child: const Text("Ingresar"),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

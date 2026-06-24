@@ -13,10 +13,13 @@ class MainActivity: FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Bloqueo de capturas desactivado para la práctica
+        /*
         window.setFlags(
             WindowManager.LayoutParams.FLAG_SECURE,
             WindowManager.LayoutParams.FLAG_SECURE
         )
+        */
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
