@@ -43,3 +43,19 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Credenciales administrativas de Firebase
+serviceAccountKey.json
+**/serviceAccountKey.json
+*firebase-adminsdk*.json
+**/*firebase-adminsdk*.json
+credentials.json
+**/credentials.json
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# Credenciales de la herramienta FCM
+tools/fcm_sender/*.json
